@@ -1,0 +1,79 @@
+#===================================================
+# Reporting file system
+
+#<>_events: inf, dis, hosp, sero+, Vac
+#<>_status: Vac, Sero-status
+#<>_report_period: start, period, end
+
+# Levels supported: groups, cohort, age
+# specify ages remember that: (min)<=ageDays/365 < (max), so the max age is not included in the group
+# e.g. 9,10 includes only 9 years old 
+#=====================================================
+
+groups_print = 0
+groups_complement = 1
+groups_events = 1, 1, 1, 1, 0
+groups_status = 0, 1
+groups_ages = 9,10 #5,18; 18,46 #Would this work
+groups_report_period = 0,1,25551
+groups_avg_first = 0
+groups_print_total_ages = 0
+
+
+## Cohort variables
+## These variables refer to the people in age of vaccination the first year of vaccination 
+
+cohort_print = 0
+cohort_complement = 1
+cohort_events = 1, 1, 1, 1, 0
+cohort_status = 0, 1
+cohort_ages = 9,10;16,17
+cohort_report_period = 14235,365,25551
+
+## Discrete age variables, 0,1,2,3,4,etc
+# Specify only minimum and maximum age in the variable age_ages 
+
+age_print = 0
+age_complement = 1
+age_events = 1,1,1,1,1
+age_status = 0, 1
+age_ages = 0,101
+age_report_period = 14235,365,25551
+
+# FOI output
+
+foi_print = 0
+foi_report_period = 0,1,25551
+foi_serotypes = 1,1,1,1
+foi_print_zones = 0
+foi_print_R0 = 0
+foi_outbreak_symptomatics = 1
+foi_outbreak_sprayed_houses = 1
+
+# Spatial outputs
+
+spatial_print = 0
+spatial_report_period = 1,1,25551
+spatial_mosquitoes = 1
+spatial_symptomatics = 1
+spatial_outbreak_report = 1
+
+# print housebites
+
+housebites_print = 0
+
+# print compartment sizes by TS
+
+immature_print = 1
+zero_moz_locations = 0
+moz_ages_print = 0
+
+# print locations where spraying happens
+
+spray_print = 0
+spray_locs_print = 0
+
+# print number of mosquitoes by location
+
+moz_heterogeneity_print = 0
+moz_heterogeneity_period = 7 #in days

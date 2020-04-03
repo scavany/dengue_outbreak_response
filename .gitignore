@@ -3,3 +3,8 @@ DengueSim
 
 # Compiled Object files
 *.obj
+
+# Large files
+birthdeath_15.csv
+trajectories_15.txt
+synthetic_locations.csv

@@ -1,0 +1,38 @@
+#response_strategy can be zonal, ring, or none
+#starting_method can be once, once yearly, twice yearly, threshold monthly, threshold weekly, threshold fixed monthly, or threshold fixed weekly.
+outbreak_response_strategy = zonal
+outbreak_thoroughness = 2.0
+outbreak_residuality = 0.347
+outbreak_compliance = 0.70
+outbreak_return_visits = 0
+outbreak_max_houses_per_day = 11000
+outbreak_starting_method = once
+outbreak_simultaneous_zones = 6
+outbreak_number_spray_cycles = 3
+outbreak_spray_cycle_delay = 0
+outbreak_training_length = 0
+outbreak_week_length = 6
+outbreak_zonal_ordering = zonal_ordering.csv
+outbreak_efficacy_length = 91
+outbreak_residuality_lag = 10
+outbreak_season_start_day = 152
+
+#threshold fixed parameters
+outbreak_surveillance_effort = 1.0
+outbreak_sprays_per_year = 2
+outbreak_response_threshold = 0
+outbreak_surveillance_delay = 7
+
+#threshold parameters
+outbreak_surveillance_effort = 1.0
+outbreak_number_sigmas = 1
+outbreak_number_mean_years = 5
+outbreak_sprays_per_year = 2
+outbreak_past_incidence = zero_incidence.csv
+outbreak_surveillance_delay = 7
+
+#once or yearly parameters
+#if not twice yearly, spray gap not needed
+outbreak_start_day = 1
+outbreak_repeat_spray_gap = 30
+

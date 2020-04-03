@@ -1,0 +1,104 @@
+#=======================================================================
+# Vaccination settings:
+# This file contains the values needed
+# to implement vaccination in DengueSim
+# -> vaccination_strategy:
+# random_trial, sanofi_trial, routine, none
+# -> trial_recruitment_strategy supports: random, zones
+#=======================================================================
+
+vaccination_strategy = none
+vaccine_routine_test = 1
+vaccine_routine_test_specificity = 0.5 # blablablablabla
+vaccine_routine_test_sensitivity = 0.5
+vaccine_day = 14			    
+vaccine_coverage = 1.0
+vaccine_age = 9
+vaccine_catchup = 0
+vaccine_ID = 1
+vaccine_groups_file = vaccine_groups.csv    
+vaccine_profiles_file = vaccine_settings.txt
+trial_settings_file = vaccine_settings.txt
+
+#=======================================================================
+# trial settings file 
+#
+# specify age groups separting each with a ';'. For instance 5,8; 10,20
+# age groups are specified with an open up limit [min,max)
+# specify a dropout rate for each group separated by ',' e.g. 0.13, 0.13
+#=======================================================================
+
+#=======================================================================
+#  Vaccination Variables
+#=======================================================================
+
+trial_recruitment_strategy = random
+trial_recruitment_start_day = 0
+trial_recruitment_timeframe = 10
+trial_avg_enrollment_days = 365
+trial_vaccine_sample_size = 4000
+trial_placebo_sample_size = 4000
+trial_age_groups = 5,18; 18,46
+trial_recruitment_zone = TA  # BG, IQ, MC, MY, PT, PU, SA, TA
+trial_vaccine_profile = 3
+trial_placebo_profile = 2
+trial_length_days = 50
+trial_minimum_cases = 7
+trial_maximum_days = 365
+
+#=======================================================================
+# Surveillance system settings 
+#=======================================================================
+
+surveillance_contact_frequency = 7
+surveillance_self_report_probability = 0.5
+surveillance_avg_report_delay = 4
+surveillance_first_contact_delay = 88
+surveillance_print_exposure = 0
+#=======================================================================
+# Vaccine Profiles:
+# specify first the number of vaccines in vaccine_ids  
+# the rest of the parameters are followed by each id     
+# IDs go from 0 to vaccines_ids - 1 	     	     	   
+# e.g. vaccine_mode_<id> = advance 			 
+# Vaccine modes supported: advance, age, plac, GSK
+#=======================================================================
+
+
+vaccine_ids = 4
+
+vaccine_mode_0 = advance
+vaccine_name_0 = sanofi
+vaccine_waning_0 = 365
+vaccine_protection_0 = 1
+vaccine_schedule_0 = 0, 30, 60
+
+vaccine_mode_1 = age
+vaccine_name_1 = age_model
+vaccine_vepos_a_1 = 0.47
+vaccine_veneg_a_1 = 1.26
+vaccine_vepos_b_1 = 0.148
+vaccine_veneg_b_1 = 0.28
+vaccine_vepos_c_1 = 9.17
+vaccine_veneg_c_1 = 9.27
+vaccine_prop_inf_1 = 0.7
+vaccine_normdev_neg_1 = 0.5
+vaccine_normdev_pos_1 = 0.8
+vaccine_schedule_1 = 0, 30, 60
+
+vaccine_mode_2 = placebo
+vaccine_name_2 = placebo
+vaccine_ve_2 = 0.0
+vaccine_schedule_2 = 0, 60
+
+vaccine_mode_3 = GSK
+vaccine_name_3 = GSK
+vaccine_schedule_3 = 0, 60
+vaccine_waning_pos_3 = 365000000000
+vaccine_waning_neg_3 = 365000000000
+vaccine_RRInfneg_3 = 0.45 #,0.35,0.42,0.8
+vaccine_RRInfpos_3 = 0.45 #,0.35,0.42,0.8
+vaccine_RRDisneg_3 = 0.45 #,0.35,0.42,0.8
+vaccine_RRDispos_3 = 0.45 #,0.35,0.42,0.8
+vaccine_RRHospneg_3 = 1.0
+vaccine_RRHosppos_3 = 1.0
