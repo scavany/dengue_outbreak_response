@@ -2,7 +2,7 @@
 DengueSim
 
 # Compiled Object files
-*.obj
+*.o
 
 # Large files
 birthdeath_15.csv
