@@ -107,12 +107,6 @@ cv.out <- Map('/',sd.out,mean.out)
 
 best.locs <- lapply(med.out, function(x) max.col(-x))
 best.values <- lapply(med.out, function(x) apply(x,1,min))
-sink("output_all_years.txt")
-print("BEST CATEGORIES")
-print(best.locs)
-print("BEST VALUES")
-print(best.values)
-sink()
 
 case.cat <- 3
 best.total.cases <- list(none.folder=none.output[,case.cat])
@@ -124,7 +118,6 @@ for (folder in analysis.folders) {
 }
 
 ##setup plots ========================================
-setwd(directory)
 if(!file.exists("figures")){dir.create("figures")}
 
 threshold.mean.list <- list()
@@ -321,79 +314,3 @@ dev.off()
 btc.ulv <- best.total.cases
 seasonal.ulv <- spray.yearly.list
 save(btc.ulv, seasonal.ulv, file="best_total_cases_ulv.RData")
-
-##Summary figure moz ==========================================================
-tiff("figures/S4_Fig.tif", res=600,
-     width=4152, height=4152, compression="lzw")
-par(mfrow=c(2,2), ps=10,
-    mar=c(2.6, 2.1, 2.6, 2.1),
-    oma=c(1,1,1,0.11))
-threshold.mean.list.moz <- list()
-for (i in seq(n.cats["spray_threshold_mean"])) {
-    threshold.mean.list.moz[[i]] <- tot.output[["spray_threshold_mean"]][,2,i]
-}
-vioplot(threshold.mean.list.moz,
-        names=c(expression(paste("1",sigma, ", monthly")),
-                expression(paste("2",sigma,", monthly")),
-                expression(paste("1",sigma,", weekly")),
-                expression(paste("2",sigma,", weekly"))),
-        col=viridis(4)[3],
-        ylab="",
-        xlab="",
-        asp=1)
-title(ylab = "Average abundance", xlab = "Spraying strategy",
-      cex.lab = 1)
-mtext("(a) Adaptive threshold strategies", side = 3, adj = -0.1, line = 1)
-
-spray.yearly.list.moz <- list()
-for (i in seq(n.cats["spray_yearly_all"])) {
-    spray.yearly.list.moz[[months[i]]] <- tot.output[["spray_yearly_all"]][,2,i]
-}
-vioplot(spray.yearly.list.moz,
-        names=months.short,
-        col=viridis(4)[2],
-        ylab="",
-        xlab="",
-        cex.axis = 1,
-        cex.lab = 1)
-title(ylab = "Average abundance", xlab = "Spraying strategy",
-      cex.lab = 1)
-mtext("(b) Once yearly strategies", side = 3, adj = -0.1, line = 1)
-
-median.matrix.moz <- matrix(NA, nrow=12, ncol=12)
-for (i in seq(12)) {
-    median.matrix.moz[i,i] <- NA#median(tot.output[["spray_yearly_all"]][,2,i])
-    for (j in seq(12)[-i]) {
-        median.matrix.moz[i,j] <- median(tot.output[["spray_twice_yearly_all"]][,2,
-                                                                                pairs.by.month[i,j]
-                                                                                ]
-                                         )
-    }
-}
-image.plot(z=median.matrix.moz, x=seq(12), y=seq(12), xlab="Month", ylab="Month",
-      col=colorRampPalette(c(viridis(4)[1], "white"))(100)[1:81],
-      asp=1, axes=F)
-axis(2, at=seq(12),labels=months.short)
-axis(1, at=seq(12),labels=months.short)
-mtext("(c) Twice yearly strategies", side = 3, adj = -0.1, line = 0.6)
-
-best.total.mozzes <- list(none.folder=none.output[,2])
-for (folder in analysis.folders) {
-    temp.loc <- best.locs[[folder]][2]
-    best.total.mozzes[[folder]] <- tot.output[[folder]][,
-                                                       2,
-                                                       temp.loc]
-}
-vioplot(best.total.mozzes,
-        names=c("None", "Adaptive\n threshold",
-                "Once\n yearly", "Twice\n yearly"),
-        col=rev(viridis(4)),
-        ylab="",
-        xlab="",
-        cex.axis = 1,
-        cex.lab = 1)
-title(ylab = "Average abundance", xlab = "Spraying strategy",
-      cex.lab = 1)
-mtext("(d) Best strategies by type", side = 3, adj = -0.1, line = 0.6)
-
-dev.off()

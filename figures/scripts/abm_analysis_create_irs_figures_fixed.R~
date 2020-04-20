@@ -1,0 +1,347 @@
+#======================================================================================
+# Author: Sean Cavany
+# project: Outbreak response
+# Year: 2019
+# 
+# Code to analyze the output of the agent based model following space spraying
+#
+# Files needed:
+#======================================================================================
+library(stringr)
+library(vioplot)
+library(viridis)
+directory <- "~/Documents/zika_project/outbreak_response/abm_output/"
+moz.outname <- "immature"
+spr.outname <- "spray"
+foi.outname <- "foi"
+folder <- "irs_threshold_fixed"
+suffixes <- c("/", "_2/")
+
+n.sims <- 200
+n.batches <- length(suffixes)
+n.cats <- 2
+n.outputs <- 3
+n.years <- 11
+n.days <- 4018
+n.burn.years <- 0
+if (n.burn.years > 0) {
+    burnin.period <- seq(1,n.burn.years*365)
+} else {
+    burnin.period <- NULL
+}
+drop.days <- seq(365*n.years+1, n.days)
+drops <- c(burnin.period, drop.days)
+
+
+##analysis - load output
+setwd(directory)
+load("scripts/irs_analysis_fixed.RData", verbose=T)
+parms <- read.csv("scripts/irs_fixed_parms.csv")
+
+##obtain quantities of interest
+med.none <- apply(none.output, MARGIN=c(2), FUN=median, na.rm=T)
+low.none <- apply(none.output, MARGIN=c(2),
+                  FUN=function(x){quantile(x, 0.25, na.rm=T)})
+upp.none <- apply(none.output, MARGIN=c(2),
+                  FUN=function(x){quantile(x, 0.75, na.rm=T)})
+mean.none <- apply(none.output, MARGIN=c(2), FUN=mean, na.rm=T)
+sd.none <- apply(none.output, MARGIN=c(2), FUN=sd, na.rm=T)
+cv.none <- sd.none/mean.none
+
+med.out <- apply(tot.output, MARGIN=c(2,3),
+                 FUN=median,
+                 na.rm=T)
+low.out <- apply(tot.output, MARGIN=c(2,3),
+                 FUN=function(x){quantile(x,
+                                          probs=0.25,
+                                          na.rm=T)})
+upp.out <- apply(tot.output, MARGIN=c(2,3),
+                 FUN=function(x){quantile(x,
+                                          probs=0.75,
+                                          na.rm=T)}) 
+mean.out <- apply(tot.output, MARGIN=c(2,3),
+                  FUN=mean, na.rm=T)
+sd.out <- apply(tot.output, MARGIN=c(2,3), FUN=sd, na.rm=T)
+cv.out <- sd.out/mean.out
+
+
+## mean.out <- lapply(tot.output, function(x){apply(x,
+##                                                  MARGIN=c(2,3),
+##                                                  FUN=mean,
+##                                                  na.rm=T)})
+## sum.out <- lapply(tot.output, function(x){apply(x,
+##                                                 MARGIN=c(2,3),
+##                                                 FUN=sum,
+##                                                 na.rm=T)})
+## n.out <- Map('/',sum.output,mean.output)
+## max.out <- lapply(tot.output, function(x){apply(x,
+##                                                 MARGIN=c(2,3),
+##                                                 FUN=max,
+##                                                 na.rm=T)})
+## min.out <- lapply(tot.output, function(x){apply(x,
+##                                                 MARGIN=c(2,3),
+##                                                 FUN=min,
+##                                                 na.rm=T)})
+## sd.out <- lapply(tot.output, function(x){apply(x,
+##                                                MARGIN=c(2,3),
+##                                                FUN=sd, na.rm=T)})
+## se.out <- Map('/', sd.out, lapply(n.out, sqrt))
+
+library(mgcv)
+output.monthly <- as.data.frame(cbind(threshold=parms$outbreak_response_threshold[1:1000],
+                                      sprays=tot.output[,1,1],
+                                      mozzes=tot.output[,2,1],
+                                      cases=tot.output[,3,1]))
+output.weekly <- as.data.frame(cbind(threshold=parms$outbreak_response_threshold[1001:2000],
+                                      sprays=tot.output[,1,2],
+                                      mozzes=tot.output[,2,2],
+                                      cases=tot.output[,3,2]))
+
+## plot(sprays~threshold, data=output.monthly,
+##      type='p', xlab=NA, ylab="number of days sprayed")
+## plot(sprays~threshold, data=output.weekly,
+##      type='p', xlab=NA, ylab=NA)
+## plot(mozzes~threshold, data=output.monthly,
+##      type='p', xlab=NA, ylab="average number mosquitoes")
+## plot(mozzes~threshold, data=output.weekly,
+##      type='p', xlab=NA, ylab=NA)
+## plot(cases~threshold, data=output.monthly,
+##      type='p', xlab="threshold (cases/month)", ylab="total cases")
+## plot(cases~threshold, data=output.weekly,
+##      type='p', xlab="threshold (cases/week)", ylab=NA)
+
+##gam
+axis.size <- 1
+label.size <- 1
+spray.ylim <- c(min(c(output.monthly$sprays, output.weekly$sprays)),
+                max(c(output.monthly$sprays, output.weekly$sprays)))
+moz.ylim <- c(min(c(output.monthly$mozzes, output.weekly$mozzes)),
+              max(c(output.monthly$mozzes, output.weekly$mozzes)))
+case.ylim <- c(min(c(output.monthly$cases, output.weekly$cases)),
+                max(c(output.monthly$cases, output.weekly$cases)))
+
+setwd(directory)
+load("scripts/ulv_gam_outputs.RData", verbose=T)
+
+sp.ylim <- c(min(c(spray.ylim, s.ylim)),
+             max(c(spray.ylim, s.ylim)))
+mo.ylim <- c(min(c(moz.ylim, m.ylim)),
+             max(c(moz.ylim, m.ylim)))
+ca.ylim <- c(min(c(case.ylim, c.ylim)),
+             max(c(case.ylim, c.ylim)))
+
+tiff("figures/monthly_gam_fixed_comparison.tif", res=600,
+     width=4152, height=4152, compression="lzw")
+par(mfrow=c(3,2), ps=10,
+    mar=c(2.1, 2.1, 1.1, 1.1),
+    oma=c(3,2,3,1), xpd=NA)
+plot(gms.ulv, residuals=T, rug=F, shift=coef(gms.ulv)[1],
+     se=F, xlab=NA, ylab="# days sprayed", cex.axis=axis.size, cex.lab=label.size,
+     ylim=sp.ylim)
+title(main="ULV")
+
+gam.monthly.sprays <- gam(sprays~s(threshold), data=output.monthly)
+gam.weekly.sprays <- gam(sprays~s(threshold), data=output.weekly)
+plot(gam.monthly.sprays, residuals=T, rug=F, shift=coef(gam.monthly.sprays)[1],
+     se=F, xlab=NA, ylab=NA, cex.axis=axis.size, cex.lab=label.size,
+     ylim=sp.ylim)
+title(main="TIRS")
+
+plot(gmm.ulv, residuals=T, rug=F, shift=coef(gmm.ulv)[1],
+     se=F, xlab=NA, ylab="average mosquitoes", cex.axis=axis.size, cex.lab=label.size,
+     ylim=mo.ylim)
+
+gam.monthly.mozzes <- gam(mozzes~s(threshold), data=output.monthly)
+gam.weekly.mozzes <- gam(mozzes~s(threshold), data=output.weekly)
+plot(gam.monthly.mozzes, residuals=T, rug=F, shift=coef(gam.monthly.mozzes)[1],
+     se=F, xlab=NA, ylab=NA, cex.axis=axis.size, cex.lab=label.size,
+     ylim=mo.ylim)
+
+plot(gmc.ulv, residuals=T, rug=F, shift=coef(gmc.ulv)[1],
+     se=F, xlab="threshold (cases/month)", ylab="total infections", cex.axis=axis.size, cex.lab=label.size,
+     ylim=ca.ylim)
+
+gam.monthly.cases <- gam(cases~s(threshold), data=output.monthly)
+gam.weekly.cases <- gam(cases~s(threshold), data=output.weekly)
+plot(gam.monthly.cases, residuals=T, rug=F, shift=coef(gam.monthly.cases)[1],
+     se=F, xlab="threshold (cases/month)", ylab=NA, cex.axis=axis.size, cex.lab=label.size,
+     ylim=ca.ylim)
+
+dev.off()
+
+##combined
+tiff("figures/gam_fixed_comparison_all.tif", res=600,
+     width=4152, height=4152, compression="lzw")
+par(mfrow=c(3,2), ps=10,
+    mar=c(2.1, 2.1, 1.1, 1.1),
+    oma=c(3,2,3,1), xpd=NA)
+cols <- viridis(3)
+
+plot(gms.ulv, residuals=T, rug=F, shift=coef(gms.ulv)[1],
+     se=F, xlab=NA, ylab="# days sprayed", cex.axis=axis.size, cex.lab=label.size,
+     ylim=sp.ylim, col=cols[1])
+title(main="ULV")
+par(new=TRUE)
+plot(gws.ulv, residuals=T, rug=F, shift=coef(gws.ulv)[1], se=F, col=cols[2],
+     xlab=NA, ylab=NA, ylim=sp.ylim, xaxt="n", yaxt="n")
+legend("topright", c("Monthly", "Weekly"), col=cols[1:2], lty="solid")
+
+plot(gam.monthly.sprays, residuals=T, rug=F, shift=coef(gam.monthly.sprays)[1],
+     se=F, xlab=NA, ylab=NA, cex.axis=axis.size, cex.lab=label.size,
+     ylim=sp.ylim, col=cols[1])
+title(main="TIRS")
+par(new=TRUE)
+plot(gam.weekly.sprays, residuals=T, rug=F, shift=coef(gam.weekly.sprays)[1],
+     se=F, col=cols[2],
+     xlab=NA, ylab=NA, ylim=sp.ylim, xaxt="n", yaxt="n")
+
+plot(gmm.ulv, residuals=T, rug=F, shift=coef(gmm.ulv)[1],
+     se=F, xlab=NA, ylab="average mosquitoes", cex.axis=axis.size, cex.lab=label.size,
+     ylim=mo.ylim, col=cols[1])
+par(new=TRUE)
+plot(gwm.ulv, residuals=T, rug=F, shift=coef(gwm.ulv)[1],
+     se=F, col=cols[2],
+     xlab=NA, ylab=NA, ylim=mo.ylim, xaxt="n", yaxt="n")
+
+plot(gam.monthly.mozzes, residuals=T, rug=F, shift=coef(gam.monthly.mozzes)[1],
+     se=F, xlab=NA, ylab=NA, cex.axis=axis.size, cex.lab=label.size,
+     ylim=mo.ylim, col=cols[1])
+par(new=TRUE)
+plot(gam.weekly.mozzes, residuals=T, rug=F, shift=coef(gam.weekly.mozzes)[1],
+     se=F, col=cols[2],
+     xlab=NA, ylab=NA, ylim=mo.ylim, xaxt="n", yaxt="n")
+
+plot(gmc.ulv, residuals=T, rug=F, shift=coef(gmc.ulv)[1],
+     se=F, xlab="threshold (cases/month)", ylab="total infections",
+     cex.axis=axis.size, cex.lab=label.size,
+     ylim=ca.ylim, col=cols[1])
+par(new=TRUE)
+plot(gwc.ulv, residuals=T, rug=F, shift=coef(gwc.ulv)[1],
+     se=F, col=cols[2],
+     xlab=NA, ylab=NA, ylim=ca.ylim, xaxt="n", yaxt="n")
+
+plot(gam.monthly.cases, residuals=T, rug=F, shift=coef(gam.monthly.cases)[1],
+     se=F, xlab="threshold (cases/month)", ylab=NA, cex.axis=axis.size, cex.lab=label.size,
+     ylim=ca.ylim, col=cols[1])
+par(new=TRUE)
+plot(gam.weekly.cases, residuals=T, rug=F, shift=coef(gam.weekly.cases)[1],
+     se=F, col=cols[2],
+     xlab=NA, ylab=NA, ylim=ca.ylim, xaxt="n", yaxt="n")
+
+dev.off()
+
+##weekly plot
+tiff("figures/weekly_gam_fixed_comparison.tif", res=600,
+     width=4152, height=4152, compression="lzw")
+par(mfrow=c(3,2), ps=10,
+    mar=c(2.1, 2.1, 1.1, 1.1),
+    oma=c(3,2,3,1), xpd=NA)
+plot(gws.ulv, residuals=T, rug=F, shift=coef(gws.ulv)[1],
+     se=F, xlab=NA, ylab="# days sprayed", cex.axis=axis.size, cex.lab=label.size,
+     ylim=sp.ylim)
+title(main="ULV")
+
+plot(gam.weekly.sprays, residuals=T, rug=F, shift=coef(gam.weekly.sprays)[1],
+     se=F, xlab=NA, ylab=NA, cex.axis=axis.size, cex.lab=label.size,
+     ylim=sp.ylim)
+title(main="TIRS")
+
+plot(gwm.ulv, residuals=T, rug=F, shift=coef(gwm.ulv)[1],
+     se=F, xlab=NA, ylab="average mosquitoes", cex.axis=axis.size, cex.lab=label.size,
+     ylim=mo.ylim)
+
+plot(gam.weekly.mozzes, residuals=T, rug=F, shift=coef(gam.weekly.mozzes)[1],
+     se=F, xlab=NA, ylab=NA, cex.axis=axis.size, cex.lab=label.size,
+     ylim=mo.ylim)
+
+plot(gwc.ulv, residuals=T, rug=F, shift=coef(gwc.ulv)[1],
+     se=F, xlab="threshold (cases/week)", ylab="total infections",
+     cex.axis=axis.size, cex.lab=label.size,
+     ylim=ca.ylim)
+
+plot(gam.weekly.cases, residuals=T, rug=F, shift=coef(gam.weekly.cases)[1],
+     se=F, xlab="threshold (cases/week)", ylab=NA, cex.axis=axis.size, cex.lab=label.size,
+     ylim=ca.ylim)
+
+dev.off()
+
+
+##threshold analysis
+load("scripts/tristability_irs_timeseries_all_years.RData", verbose=T)
+tot.ts.unlisted <- tot.ts[[1]]
+output.monthly.tristable1.index <- which(output.monthly$threshold >=500 & output.monthly$cases<=75000)
+output.monthly.tristable2.index <- which(output.monthly$threshold >=500 & output.monthly$cases>=75000
+                                         & output.monthly$cases<=150000)
+output.monthly.tristable3.index <- which(output.monthly$threshold >=500 & output.monthly$cases>=150000)
+
+timeseries.tristable1 <- apply(tot.ts.unlisted[,output.monthly.tristable1.index, 3], 1, median)
+timeseries.tristable2 <- apply(tot.ts.unlisted[,output.monthly.tristable2.index, 3], 1, median)
+timeseries.tristable3 <- apply(tot.ts.unlisted[,output.monthly.tristable3.index, 3], 1, median)
+upp.tristable1 <- apply(tot.ts.unlisted[,output.monthly.tristable1.index, 3], 1,
+                        function(x) quantile(x, 0.95))
+upp.tristable2 <- apply(tot.ts.unlisted[,output.monthly.tristable2.index, 3], 1,
+                        function(x) quantile(x, 0.95))
+upp.tristable3 <- apply(tot.ts.unlisted[,output.monthly.tristable3.index, 3], 1,
+                        function(x) quantile(x, 0.95))
+low.tristable1 <- apply(tot.ts.unlisted[,output.monthly.tristable1.index, 3], 1,
+                        function(x) quantile(x, 0.05))
+low.tristable2 <- apply(tot.ts.unlisted[,output.monthly.tristable2.index, 3], 1,
+                        function(x) quantile(x, 0.05))
+low.tristable3 <- apply(tot.ts.unlisted[,output.monthly.tristable3.index, 3], 1,
+                        function(x) quantile(x, 0.05))
+
+timeseries.tristable1.moz <- apply(tot.ts.unlisted[,output.monthly.tristable1.index, 1], 1, median)
+timeseries.tristable2.moz <- apply(tot.ts.unlisted[,output.monthly.tristable2.index, 1], 1, median)
+timeseries.tristable3.moz <- apply(tot.ts.unlisted[,output.monthly.tristable3.index, 1], 1, median)
+upp.tristable1.moz <- apply(tot.ts.unlisted[,output.monthly.tristable1.index, 1], 1,
+                        function(x) quantile(x, 0.95))
+upp.tristable2.moz <- apply(tot.ts.unlisted[,output.monthly.tristable2.index, 1], 1,
+                        function(x) quantile(x, 0.95))
+upp.tristable3.moz <- apply(tot.ts.unlisted[,output.monthly.tristable3.index, 1], 1,
+                        function(x) quantile(x, 0.95))
+low.tristable1.moz <- apply(tot.ts.unlisted[,output.monthly.tristable1.index, 1], 1,
+                        function(x) quantile(x, 0.05))
+low.tristable2.moz <- apply(tot.ts.unlisted[,output.monthly.tristable2.index, 1], 1,
+                        function(x) quantile(x, 0.05))
+low.tristable3.moz <- apply(tot.ts.unlisted[,output.monthly.tristable3.index, 1], 1,
+                        function(x) quantile(x, 0.05))
+
+
+tiff("figures/tristable_ts.tif", res=600, units="in",
+     width=4152/600, height=2*1660/600, compression="lzw",
+     pointsize=10)
+par(mfrow=c(2,1), #ps=10,
+    mar=c(4.1,4.1,2.1,1.1),
+    mgp=c(2,1,0))
+cols <- viridis(3)
+CI.cols <- viridis(3, alpha=0.3)
+tvec <- seq(4015)/365+2000
+plot(tvec, timeseries.tristable3, type="l", col=cols[1],
+     xlab="Year", ylab="infections", lwd=1.5)
+polygon(c(tvec, rev(tvec)),
+        c(upp.tristable3, rev(low.tristable3)),
+        col=CI.cols[1], border=NA)
+lines(seq(4015)/365+2000, timeseries.tristable2, col=cols[2], lwd=1.5)
+polygon(c(tvec, rev(tvec)),
+        c(upp.tristable2, rev(low.tristable2)),
+        col=CI.cols[2], border=NA)
+lines(seq(4015)/365+2000, timeseries.tristable1, col=cols[3], lwd=1.5)
+polygon(c(tvec, rev(tvec)),
+        c(upp.tristable1, rev(low.tristable1)),
+        col=CI.cols[3], border=NA)
+legend("top",c("High", "Medium", "Low"), col=viridis(3), lty=rep("solid",3))
+plot(tvec, timeseries.tristable3.moz, type="l", col=cols[1],
+     xlab="Year", ylab="mosquito abundance", lwd=1.5)
+polygon(c(tvec, rev(tvec)),
+        c(upp.tristable3.moz, rev(low.tristable3.moz)),
+        col=CI.cols[1], border=NA)
+lines(seq(4015)/365+2000, timeseries.tristable2.moz, col=cols[2], lwd=1.5)
+polygon(c(tvec, rev(tvec)),
+        c(upp.tristable2.moz, rev(low.tristable2.moz)),
+        col=CI.cols[2], border=NA)
+lines(seq(4015)/365+2000, timeseries.tristable1.moz, col=cols[3], lwd=1.5)
+polygon(c(tvec, rev(tvec)),
+        c(upp.tristable1.moz, rev(low.tristable1.moz)),
+        col=CI.cols[3], border=NA)
+dev.off()
+
